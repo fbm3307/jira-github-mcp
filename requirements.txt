@@ -1,0 +1,23 @@
+# HTTP clients and server
+fastapi>=0.104.0
+uvicorn>=0.24.0
+httpx>=0.25.0
+requests>=2.31.0
+
+# Jira integration
+jira>=3.5.0
+
+# GitHub integration
+PyGithub>=1.59.0
+
+# Data processing and search
+fuzzywuzzy>=0.18.0
+python-levenshtein>=0.23.0
+
+# Configuration and environment
+python-dotenv>=1.0.0
+
+# Development tools (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+black>=23.0.0 
