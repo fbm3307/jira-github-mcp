@@ -312,11 +312,11 @@ class JiraGitHubMCPServer:
         """Process a PR comment for Jira creation."""
         pr_number = args["prNumber"]
         comment = args["comment"]
-        threshold = args.get("threshold", 0.45)
+        threshold = args.get("threshold", 0.44)
         
         return await self._process_pr_comment_for_jira_impl(pr_number, comment, threshold)
 
-    async def _process_pr_comment_for_jira_impl(self, pr_number: int, comment: str, threshold: float = 0.45) -> str:
+    async def _process_pr_comment_for_jira_impl(self, pr_number: int, comment: str, threshold: float = 0.44) -> str:
         """Implementation of PR comment processing."""
         # Check if comment is requesting Jira creation
         if not self.github_client.is_create_jira_comment(comment):
