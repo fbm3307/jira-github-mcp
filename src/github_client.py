@@ -81,6 +81,23 @@ class GitHubClient:
 
     def is_create_jira_comment(self, comment: str) -> bool:
         """Check if a comment contains a request to create a Jira issue."""
+        comment_lower = comment.lower()
+        
+        # Skip system-generated error messages and status updates
+        system_indicators = [
+            r'❌.*error.*creating.*jira',
+            r'✅.*created.*jira.*issue',
+            r'🔍.*found.*similar.*existing.*jira',
+            r'\*\*error.*creating.*jira.*issue\*\*',
+            r'\*\*created.*jira.*issue\*\*',
+            r'\*\*found.*similar.*existing.*jira'
+        ]
+        
+        # If it looks like a system-generated message, skip it
+        if any(re.search(indicator, comment_lower) for indicator in system_indicators):
+            return False
+        
+        # Check for user-initiated Jira creation triggers
         triggers = [
             r'create\s+jira',
             r'make\s+jira',
@@ -90,7 +107,6 @@ class GitHubClient:
             r'create\s+ticket'
         ]
         
-        comment_lower = comment.lower()
         return any(re.search(trigger, comment_lower) for trigger in triggers)
 
     def extract_jira_details(
@@ -115,9 +131,9 @@ class GitHubClient:
         issue_type = type_match.group(1).title() if type_match else "Task"
 
         # Determine labels
-        labels = ["github-pr"]
+        labels = [self._sanitize_label("github-pr")]
         if labels_match:
-            custom_labels = [label.strip() for label in labels_match.group(1).split(',')]
+            custom_labels = [self._sanitize_label(label.strip()) for label in labels_match.group(1).split(',')]
             labels.extend(custom_labels)
 
         # Build description
@@ -140,6 +156,20 @@ class GitHubClient:
             "issue_type": issue_type,
             "labels": labels
         }
+
+    def _sanitize_label(self, label: str) -> str:
+        """Sanitize label for Jira compatibility.
+        
+        Jira labels can only contain alphanumeric characters, no spaces, hyphens, or special characters.
+        """
+        # Remove spaces and convert to lowercase
+        sanitized = label.lower().strip()
+        # Replace hyphens, spaces, and other special characters with empty string or underscore
+        sanitized = re.sub(r'[^a-zA-Z0-9]', '', sanitized)
+        # Ensure it's not empty
+        if not sanitized:
+            sanitized = "misc"
+        return sanitized
 
     def _get_pr_url(self, number: int) -> str:
         """Generate PR URL."""
