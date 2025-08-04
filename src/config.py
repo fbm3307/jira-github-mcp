@@ -31,7 +31,7 @@ def load_config() -> Config:
             username=get_required_env_var('JIRA_USERNAME'),
             api_token=get_required_env_var('JIRA_API_TOKEN'),
             project_key=get_required_env_var('JIRA_PROJECT_KEY'),
-            auth_method=get_optional_env_var('JIRA_AUTH_METHOD', 'basic'),
+            auth_method=get_optional_env_var('JIRA_AUTH_METHOD', 'bearer'),
         ),
         github=Config.GitHub(
             token=get_required_env_var('GITHUB_TOKEN'),
