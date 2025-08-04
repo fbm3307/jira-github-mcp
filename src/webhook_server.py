@@ -143,7 +143,7 @@ class WebhookServer:
                 await self._process_pr_comment_for_jira(pr["number"], comment)
 
     async def _process_pr_comment_for_jira(
-        self, pr_number: int, comment: str, threshold: float = 0.7
+        self, pr_number: int, comment: str, threshold: float = 0.45
     ) -> ProcessingResult:
         """Process PR comment for potential Jira creation."""
         try:
