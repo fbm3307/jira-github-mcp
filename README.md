@@ -10,6 +10,7 @@ A Model Context Protocol (MCP) server that integrates Jira and GitHub to automat
 - 🔗 **Seamless Linking**: Links GitHub PRs with Jira issues
 - 🛠️ **MCP Tools**: Provides comprehensive tools for Jira and GitHub operations
 - 🚀 **Webhook Support**: Real-time processing of GitHub events
+- 🔐 **Modern Authentication**: Bearer token authentication by default for enhanced security
 - 🐍 **Python-Powered**: Built with modern Python and async support
 
 ## Architecture
@@ -59,6 +60,7 @@ JIRA_HOST=https://yourcompany.atlassian.net
 JIRA_USERNAME=your-email@company.com
 JIRA_API_TOKEN=your-jira-api-token
 JIRA_PROJECT_KEY=PROJ
+# JIRA_AUTH_METHOD=bearer  # Default: bearer (bearer/basic)
 
 # GitHub Configuration
 GITHUB_TOKEN=your-github-personal-access-token
@@ -116,7 +118,13 @@ poetry run python -m src.main mcp
    - Create a new API token
    - Copy the token to `JIRA_API_TOKEN`
 
-2. **Project Key**:
+2. **Authentication Method**:
+   - **Bearer Token (Default)**: Uses modern API token authentication
+   - **Basic Authentication**: Legacy username/password style (if needed for older Jira instances)
+   - The default is Bearer token authentication - no configuration needed
+   - To use Basic auth instead: Set `JIRA_AUTH_METHOD=basic` in your `.env` file
+
+3. **Project Key**:
    - Find your project key in Jira (e.g., "PROJ", "DEV", "BUG")
    - Set it in `JIRA_PROJECT_KEY`
 
@@ -316,9 +324,12 @@ pytest tests/
    - Use `python -m src.main` instead of direct script execution
 
 2. **Authentication Errors**:
-   - Verify your Jira API token and GitHub token
+   - Verify your Jira API token and GitHub token are valid
    - Check that usernames/emails are correct
    - Ensure .env file is in the project root
+   - **Jira Authentication**: Bearer token is the default (recommended for most instances)
+   - If you get 401 errors, try switching between Bearer and Basic auth methods
+   - For older Jira instances, you may need `JIRA_AUTH_METHOD=basic`
 
 3. **Webhook Not Triggering**:
    - Verify webhook URL is accessible
