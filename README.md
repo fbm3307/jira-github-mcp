@@ -12,24 +12,52 @@ A Model Context Protocol (MCP) server that integrates Jira and GitHub to automat
 - 🚀 **Webhook Support**: Real-time processing of GitHub events
 - 🔐 **Modern Authentication**: Bearer token authentication by default for enhanced security
 - 🐍 **Python-Powered**: Built with modern Python and async support
+- 🎛️ **Server Management**: Built-in server status monitoring and log management
+- 📊 **Issue Filtering**: Advanced filtering by assignee, status, and other criteria
+- 🧪 **Testing Tools**: Comprehensive demo and testing scripts included
 
 ## Architecture
 
 ```mermaid
 graph TB
-    A[GitHub PR Comment] --> B[FastAPI Webhook Server]
-    B --> C{Parse Comment}
-    C -->|Create Jira| D[Extract Details]
-    D --> E[Search Similar Issues]
-    E -->|Found Similar| F[Comment on PR with Link]
-    E -->|No Similar Found| G[Create New Jira Issue]
-    G --> H[Link PR to Jira]
+    subgraph "GitHub Integration"
+        A[GitHub PR Comment] --> B[FastAPI Webhook Server]
+        B --> C{Parse Comment}
+        C -->|Create Jira| D[Extract Details]
+        D --> E[Search Similar Issues]
+        E -->|Found Similar| F[Comment on PR with Link]
+        E -->|No Similar Found| G[Create New Jira Issue]
+        G --> H[Link PR to Jira]
+    end
+
+    subgraph "MCP Server Core"
+        I[MCP Client] --> J[Python MCP Server]
+        J --> K[Jira Client]
+        J --> L[GitHub Client]
+        K --> M[Jira API]
+        L --> N[GitHub API]
+        
+        O[Issue Cache<br/>1000+ Issues] --> K
+        P[Similarity Engine<br/>Fuzzy Matching] --> E
+        P --> K
+        V[Filter Engine] --> K
+    end
+
+    subgraph "Management & Testing"
+        Q[server_status.py] --> R[Process Management]
+        S[demo.py] --> J
+        T[test_mcp_client.py] --> J
+        U[mcp_server.log] --> R
+    end
+
+    subgraph "External APIs"
+        M -->|Bearer Auth<br/>Bulk Sync| O
+        N -->|Token Auth<br/>PR/Comments| L
+    end
     
-    I[MCP Client] --> J[Python MCP Server]
-    J --> K[Jira Client]
-    J --> L[GitHub Client]
-    K --> M[Jira API]
-    L --> N[GitHub API]
+    R -->|Start/Stop/Monitor| J
+    R -->|Start/Stop/Monitor| B
+    K -->|Assignee/Status<br/>Filtering| V
 ```
 
 ## Quick Start
@@ -84,9 +112,28 @@ python -m src.main webhook
 
 # Run both servers
 python -m src.main both
+```
 
-# With custom log level
-python -m src.main both DEBUG
+### 4. Server Management
+
+The server includes a convenient management script:
+
+```bash
+# Check server status
+python server_status.py status
+
+# Start the server (if not running)
+python server_status.py start
+
+# Stop the server
+python server_status.py stop
+
+# Restart the server
+python server_status.py restart
+
+# View recent logs
+python server_status.py logs          # Show last 20 lines
+python server_status.py logs 50       # Show last 50 lines
 ```
 
 ## Installation Options
@@ -162,6 +209,16 @@ Get all cached Jira issues with optional filtering:
 }
 ```
 
+**Filter by assignee examples:**
+- By username: `"assignee": "fmehta"`
+- By email: `"assignee": "fmehta@redhat.com"`
+- By display name: `"assignee": "Feny Mehta"`
+
+**Filter by status examples:**
+- `"status": "In Progress"`
+- `"status": "Closed"`
+- `"status": "Open"`
+
 #### 3. `get_jira_boards`
 Get all Jira boards for the project.
 
@@ -203,14 +260,20 @@ Get comments for a specific PR:
 ```
 
 #### 8. `process_pr_comment_for_jira`
-Process a PR comment for Jira creation:
+Process a PR comment for Jira creation with intelligent duplicate detection:
 ```json
 {
   "prNumber": 123,
   "comment": "Create jira issue for this bug fix",
-  "threshold": 0.7
+  "threshold": 0.44
 }
 ```
+
+**Features:**
+- Automatically searches for similar existing issues
+- Comments on PR with similar issue links if found
+- Creates new issue only if no similar ones exist
+- Default similarity threshold: 0.44 (44% similarity)
 
 ### GitHub Comment Triggers
 
@@ -241,7 +304,32 @@ The server automatically processes these GitHub events:
 1. **Issue Comments**: When someone comments on a PR
 2. **Pull Requests**: When PRs are opened (with auto-processing rules)
 
-### Manual Testing
+### Testing and Demo
+
+#### Run Demo Script
+Test all functionality with the demo script:
+
+```bash
+python demo.py
+```
+
+This will demonstrate:
+- Syncing Jira issues from your configured project
+- Searching for similar issues with fuzzy matching
+- Getting GitHub pull requests
+- Fetching Jira boards
+- Comment parsing for Jira creation requests
+
+#### Test MCP Client
+Test the MCP server functionality:
+
+```bash
+python test_mcp_client.py
+```
+
+This provides an interactive MCP client to test all available tools.
+
+#### Manual Webhook Testing
 
 You can manually trigger Jira creation:
 
@@ -360,11 +448,12 @@ Server logs include:
 
 ## Performance Considerations
 
-- Issue caching with 5-minute refresh intervals
-- Async/await throughout for better concurrency
-- Background task processing for webhooks
-- Efficient fuzzy matching algorithms
-- Connection pooling for API calls
+- **Issue Caching**: Intelligent caching with automatic sync detection
+- **Async Processing**: Async/await throughout for better concurrency
+- **Background Tasks**: Background task processing for webhooks
+- **Smart Matching**: Efficient fuzzy matching algorithms for duplicate detection
+- **Connection Pooling**: Optimized API calls with connection pooling
+- **Bulk Operations**: Sync up to 1000+ issues efficiently from Jira
 
 ## Security Considerations
 
