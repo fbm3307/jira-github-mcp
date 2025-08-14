@@ -306,40 +306,49 @@ The server automatically processes these GitHub events:
 
 ### Testing and Demo
 
-#### Run Demo Script
-Test all functionality with the demo script:
+The project includes comprehensive testing organized into categories:
 
-```bash
-python demo.py
+#### Test Structure
+```
+tests/
+├── unit/           # Unit tests for individual components
+├── integration/    # Integration and end-to-end tests  
+├── manual/         # Manual testing scripts
+└── demo/           # Demo and example scripts
 ```
 
-#### MCP Integration Demo
-Test the MCP integration specifically:
+#### Run Tests
 
+**Unit Tests:**
 ```bash
-python test_mcp_integration_demo.py
+pytest tests/unit/                    # Run all unit tests
+pytest tests/unit/test_auth.py        # Test authentication
+pytest tests/unit/test_config.py      # Test configuration
+pytest tests/unit/test_jira_client.py # Test Jira client
+pytest tests/unit/test_webhook.py     # Test webhook functionality
 ```
 
-This script demonstrates:
-- Different comment formats for Jira creation
-- Test scenarios for PR comment processing
-- Expected behavior for duplicate detection
-
-This will demonstrate:
-- Syncing Jira issues from your configured project
-- Searching for similar issues with fuzzy matching
-- Getting GitHub pull requests
-- Fetching Jira boards
-- Comment parsing for Jira creation requests
-
-#### Test MCP Client
-Test the MCP server functionality:
-
+**Integration Tests:**
 ```bash
-python test_mcp_client.py
+python tests/integration/test_mcp_client.py           # Interactive MCP client
+python tests/integration/test_mcp_integration_demo.py # MCP integration demo
 ```
 
-This provides an interactive MCP client to test all available tools.
+**Demo Scripts:**
+```bash
+python tests/demo/demo.py   # Comprehensive functionality demo
+```
+
+**Manual Testing:**
+```bash
+python tests/manual/test_auth_manual.py  # Manual authentication testing
+```
+
+#### What the Tests Cover
+- **Unit Tests**: Individual component functionality
+- **Integration Tests**: MCP server interactions, webhook processing
+- **Demo Scripts**: End-to-end workflow demonstrations
+- **Manual Tests**: Interactive authentication and configuration validation
 
 #### Manual Webhook Testing
 

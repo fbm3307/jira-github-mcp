@@ -6,7 +6,7 @@ This script demonstrates how to interact with the Jira-GitHub MCP server
 to test the integration between GitHub PRs and Jira ticket creation.
 
 Usage:
-    python test_mcp_integration_demo.py
+    python tests/integration/test_mcp_integration_demo.py
 
 Features tested:
 - MCP server connection

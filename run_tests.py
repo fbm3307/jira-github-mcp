@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
-"""Test runner script for JIRA authentication tests.
+"""Comprehensive test runner for Jira-GitHub MCP integration.
 
 This script provides an easy way to run different types of tests:
-- Unit tests: Test authentication logic without external dependencies  
+- Unit tests: Test individual components without external dependencies
+- Integration tests: Test MCP server and webhook interactions  
 - Manual tests: Test real JIRA connections with your credentials
+- Demo scripts: Run comprehensive functionality demonstrations
 """
 
 import subprocess
@@ -54,18 +56,17 @@ def run_unit_tests():
     """Run unit tests."""
     return run_command([
         sys.executable, "-m", "pytest", 
-        "tests/", 
+        "tests/unit/", 
         "-v", 
-        "--tb=short",
-        "-m", "not integration"
+        "--tb=short"
     ], "Unit tests")
 
 
 def run_all_tests():
-    """Run all tests including unit tests."""
+    """Run all tests including unit and integration tests."""
     return run_command([
         sys.executable, "-m", "pytest", 
-        "tests/", 
+        "tests/unit/", "tests/integration/",
         "-v", 
         "--tb=short"
     ], "All tests")
@@ -94,13 +95,13 @@ def run_manual_test():
     print("✅ Required environment variables are set")
     
     return run_command([
-        sys.executable, "test_auth_manual.py"
+        sys.executable, "tests/manual/test_auth_manual.py"
     ], "Manual authentication test")
 
 
 def main():
     """Main function."""
-    print("🧪 JIRA Authentication Test Runner")
+    print("🧪 Jira-GitHub MCP Test Runner")
     print("=" * 50)
     
     if len(sys.argv) < 2:
@@ -109,6 +110,7 @@ def main():
         print("  python run_tests.py all      # Run all automated tests") 
         print("  python run_tests.py manual   # Run manual authentication test")
         print("  python run_tests.py check    # Check dependencies")
+        print("  python run_tests.py demo     # Run demo scripts")
         sys.exit(1)
     
     command = sys.argv[1].lower()
@@ -136,6 +138,10 @@ def main():
         success = run_all_tests()
     elif command == "manual":
         success = run_manual_test()
+    elif command == "demo":
+        success = run_command([
+            sys.executable, "tests/demo/demo.py"
+        ], "Demo script")
     else:
         print(f"❌ Unknown command: {command}")
         sys.exit(1)
