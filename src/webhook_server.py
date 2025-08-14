@@ -155,6 +155,24 @@ class WebhookServer:
                     reason="No Jira creation request found"
                 )
 
+            # Check if PR already has a JIRA issue created
+            existing_jira_key = await self.github_client.has_existing_jira_issue(pr_number)
+            if existing_jira_key:
+                logger.info(f"PR #{pr_number} already has JIRA issue {existing_jira_key}")
+                
+                # Add comment to PR about existing issue
+                await self.github_client.add_comment(
+                    pr_number,
+                    f"ℹ️ **JIRA issue already exists for this PR:**\n\n"
+                    f"[{existing_jira_key}]({self.config.jira.host}/browse/{existing_jira_key})\n\n"
+                    f"No need to create a duplicate issue. Please use the existing one above."
+                )
+                
+                return ProcessingResult(
+                    action="duplicate_prevented",
+                    reason=f"PR already has JIRA issue {existing_jira_key}"
+                )
+
             # Get PR details
             pr = await self.github_client.get_pull_request(pr_number)
             if not pr:

@@ -109,6 +109,31 @@ class GitHubClient:
         
         return any(re.search(trigger, comment_lower) for trigger in triggers)
 
+    async def has_existing_jira_issue(self, pr_number: int) -> Optional[str]:
+        """Check if a PR already has a JIRA issue created by examining comments.
+        
+        Returns the JIRA issue key if found, None otherwise.
+        """
+        try:
+            # Get all comments for the PR
+            comments = await self.get_pull_request_comments(pr_number)
+            
+            # Look for comments that indicate a JIRA issue was created
+            jira_issue_pattern = r'✅.*\*\*Created Jira issue:\*\*.*\[([A-Z]+-\d+)\]'
+            
+            for comment in comments:
+                if comment.body:
+                    match = re.search(jira_issue_pattern, comment.body)
+                    if match:
+                        jira_key = match.group(1)
+                        logger.info(f"Found existing JIRA issue {jira_key} for PR #{pr_number}")
+                        return jira_key
+            
+            return None
+        except Exception as error:
+            logger.error(f"Error checking for existing JIRA issue on PR #{pr_number}: {error}")
+            return None
+
     def extract_jira_details(
         self, 
         comment: str, 

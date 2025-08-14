@@ -318,6 +318,18 @@ async def _process_pr_comment_for_jira_impl(pr_number: int, comment: str, thresh
     if not github_client.is_create_jira_comment(comment):
         return "Comment does not contain a request to create a Jira issue"
 
+    # Check if PR already has a JIRA issue created
+    existing_jira_key = await github_client.has_existing_jira_issue(pr_number)
+    if existing_jira_key:
+        # Add comment to PR about existing issue
+        await github_client.add_comment(
+            pr_number,
+            f"ℹ️ **JIRA issue already exists for this PR:**\n\n"
+            f"[{existing_jira_key}]({config.jira.host}/browse/{existing_jira_key})\n\n"
+            f"No need to create a duplicate issue. Please use the existing one above."
+        )
+        return f"PR #{pr_number} already has JIRA issue {existing_jira_key}. Added comment with existing issue reference."
+
     # Get PR details
     pr = await github_client.get_pull_request(pr_number)
     if not pr:

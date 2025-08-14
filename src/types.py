@@ -180,7 +180,7 @@ class WebhookPayload:
 @dataclass
 class ProcessingResult:
     """Result of processing a PR comment for Jira creation."""
-    action: str  # 'created', 'found_similar', 'skipped'
+    action: str  # 'created', 'found_similar', 'skipped', 'duplicate_prevented'
     issue: Optional[JiraIssue] = None
     similarity: Optional[float] = None
     reason: Optional[str] = None 
