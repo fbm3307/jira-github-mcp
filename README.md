@@ -304,6 +304,55 @@ The server automatically processes these GitHub events:
 1. **Issue Comments**: When someone comments on a PR
 2. **Pull Requests**: When PRs are opened (with auto-processing rules)
 
+### Monitoring & Health Check Endpoints
+
+The webhook server provides comprehensive monitoring capabilities:
+
+#### 1. `/health` - Health Check
+Returns detailed health status with service connectivity:
+
+```bash
+curl http://localhost:3000/health
+```
+
+**Response includes:**
+- Overall server health (healthy/degraded/unhealthy)
+- Service status for Jira and GitHub connectivity
+- Uptime information
+- Cached data statistics
+- Error details if any issues detected
+
+#### 2. `/metrics` - Server Metrics
+Get detailed server metrics and statistics:
+
+```bash
+curl http://localhost:3000/metrics
+```
+
+**Metrics tracked:**
+- Webhooks received count
+- Jira issues created count  
+- Similar issues found count
+- Duplicates prevented count
+- Errors encountered count
+- Last webhook and sync timestamps
+- Server uptime
+
+#### 3. `/status` - Interactive Dashboard
+View a beautiful HTML status dashboard:
+
+```bash
+# Open in browser
+http://localhost:3000/status
+```
+
+**Dashboard features:**
+- Real-time server metrics
+- Service health indicators
+- Configuration overview
+- Auto-refreshing timestamps
+- Quick links to JSON endpoints
+
 ### Testing and Demo
 
 #### Run Demo Script
@@ -324,6 +373,19 @@ This script demonstrates:
 - Different comment formats for Jira creation
 - Test scenarios for PR comment processing
 - Expected behavior for duplicate detection
+
+#### Health Check & Monitoring Demo
+Test the enhanced health monitoring features:
+
+```bash
+python test_health_monitoring_demo.py
+```
+
+This script demonstrates:
+- Comprehensive health check endpoints
+- Real-time metrics tracking
+- Interactive status dashboard
+- Service connectivity validation
 
 This will demonstrate:
 - Syncing Jira issues from your configured project
