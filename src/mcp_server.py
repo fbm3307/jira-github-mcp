@@ -123,7 +123,7 @@ async def handle_list_tools() -> List[Tool]:
                 "properties": {
                     "prNumber": {"type": "number", "description": "Pull request number"},
                     "comment": {"type": "string", "description": "Comment text"},
-                    "threshold": {"type": "number", "description": "Similarity threshold (default: 0.7)"},
+                    "threshold": {"type": "number", "description": "Similarity threshold (default: 0.35)"},
                 },
                 "required": ["prNumber", "comment"],
             },
@@ -305,12 +305,12 @@ async def _process_pr_comment_for_jira(args: dict) -> List[TextContent]:
     """Process a PR comment for Jira creation."""
     pr_number = args["prNumber"]
     comment = args["comment"]
-    threshold = args.get("threshold", 0.44)
+    threshold = args.get("threshold", 0.35)
     
     result = await _process_pr_comment_for_jira_impl(pr_number, comment, threshold)
     return [TextContent(type="text", text=result)]
 
-async def _process_pr_comment_for_jira_impl(pr_number: int, comment: str, threshold: float = 0.44) -> str:
+async def _process_pr_comment_for_jira_impl(pr_number: int, comment: str, threshold: float = 0.35) -> str:
     """Implementation of PR comment processing."""
     global jira_client, github_client, config
     

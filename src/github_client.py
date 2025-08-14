@@ -119,11 +119,13 @@ class GitHubClient:
             comments = await self.get_pull_request_comments(pr_number)
             
             # Look for comments that indicate a JIRA issue was created
-            jira_issue_pattern = r'✅.*\*\*Created Jira issue:\*\*.*\[([A-Z]+-\d+)\]'
+            # Pattern matches: ✅ **Created Jira issue:** followed by newlines and [JIRA-KEY]
+            jira_issue_pattern = r'✅.*\*\*Created Jira issue:\*\*.*?\[([A-Z]+-\d+)\]'
             
             for comment in comments:
                 if comment.body:
-                    match = re.search(jira_issue_pattern, comment.body)
+                    # Use DOTALL flag to match across newlines
+                    match = re.search(jira_issue_pattern, comment.body, re.DOTALL)
                     if match:
                         jira_key = match.group(1)
                         logger.info(f"Found existing JIRA issue {jira_key} for PR #{pr_number}")

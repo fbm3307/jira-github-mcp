@@ -131,32 +131,48 @@ class JiraClient:
         return self.issues
 
     def find_similar_issues(self, search_text: str, threshold: float = 0.6) -> List[IssueMatchResult]:
-        """Find similar issues based on text similarity."""
+        """Find similar issues based on text similarity with improved algorithm."""
         if not self.issues:
             return []
 
         results = []
         
         for issue in self.issues:
-            # Create searchable text from issue
-            issue_text = f"{issue.summary} {issue.description or ''} {' '.join(issue.labels)}"
+            # Calculate similarity scores for different fields using multiple algorithms
+            summary_scores = [
+                fuzz.ratio(search_text.lower(), issue.summary.lower()) / 100,
+                fuzz.partial_ratio(search_text.lower(), issue.summary.lower()) / 100,
+                fuzz.token_sort_ratio(search_text.lower(), issue.summary.lower()) / 100,
+                fuzz.token_set_ratio(search_text.lower(), issue.summary.lower()) / 100
+            ]
+            # Take the best summary score
+            summary_score = max(summary_scores)
             
-            # Calculate similarity scores for different fields
-            summary_score = fuzz.token_sort_ratio(search_text.lower(), issue.summary.lower()) / 100
             description_score = 0
             if issue.description:
-                description_score = fuzz.token_sort_ratio(search_text.lower(), issue.description.lower()) / 100
+                desc_scores = [
+                    fuzz.token_sort_ratio(search_text.lower(), issue.description.lower()) / 100,
+                    fuzz.token_set_ratio(search_text.lower(), issue.description.lower()) / 100
+                ]
+                description_score = max(desc_scores)
             
             labels_score = 0
             if issue.labels:
                 labels_text = ' '.join(issue.labels)
-                labels_score = fuzz.token_sort_ratio(search_text.lower(), labels_text.lower()) / 100
+                labels_score = fuzz.token_set_ratio(search_text.lower(), labels_text.lower()) / 100
 
-            # Weighted combined score
-            combined_score = (summary_score * 0.7) + (description_score * 0.3) + (labels_score * 0.2)
+            # Primary score: weighted combination
+            primary_score = (summary_score * 0.7) + (description_score * 0.3) + (labels_score * 0.2)
+            primary_score = min(primary_score, 1.0)
             
-            # Normalize to 0-1 range
-            combined_score = min(combined_score, 1.0)
+            # Fallback score: simple token set ratio on full text for better matching
+            issue_full_text = f"{issue.summary} {issue.description or ''} {' '.join(issue.labels)}"
+            fallback_score = fuzz.token_set_ratio(search_text.lower(), issue_full_text.lower()) / 100
+            
+            # Use the better of the two scores
+            combined_score = max(primary_score, fallback_score)
+            
+            logger.debug(f"Similarity check for {issue.key}: primary={primary_score:.3f}, fallback={fallback_score:.3f}, final={combined_score:.3f}")
             
             if combined_score >= threshold:
                 matched_fields = []
@@ -166,6 +182,8 @@ class JiraClient:
                     matched_fields.append('description')
                 if labels_score >= threshold:
                     matched_fields.append('labels')
+                if fallback_score >= threshold and not matched_fields:
+                    matched_fields.append('content')
                 
                 results.append(IssueMatchResult(
                     score=combined_score,
@@ -221,11 +239,11 @@ class JiraClient:
             return None
 
     def needs_sync(self) -> bool:
-        """Check if sync is needed (older than 5 minutes)."""
+        """Check if sync is needed (older than 2 minutes for better duplicate detection)."""
         if not self.last_sync:
             return True
-        five_minutes_ago = datetime.now() - timedelta(minutes=5)
-        return self.last_sync < five_minutes_ago
+        two_minutes_ago = datetime.now() - timedelta(minutes=2)
+        return self.last_sync < two_minutes_ago
 
     def _transform_jira_issue(self, issue) -> JiraIssue:
         """Transform Jira API response to our JiraIssue dataclass."""

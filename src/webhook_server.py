@@ -143,7 +143,7 @@ class WebhookServer:
                 await self._process_pr_comment_for_jira(pr["number"], comment)
 
     async def _process_pr_comment_for_jira(
-        self, pr_number: int, comment: str, threshold: float = 0.44
+        self, pr_number: int, comment: str, threshold: float = 0.35
     ) -> ProcessingResult:
         """Process PR comment for potential Jira creation."""
         try:
@@ -183,8 +183,8 @@ class WebhookServer:
                 comment, pr.title, pr.body, pr.number
             )
 
-            # Ensure issues are synced
-            if self.jira_client.needs_sync():
+            # Ensure issues are synced (force sync more frequently for better duplicate detection)
+            if self.jira_client.needs_sync() or len(self.jira_client.get_all_issues()) == 0:
                 logger.info("Syncing Jira issues...")
                 await self.jira_client.sync_issues()
 
