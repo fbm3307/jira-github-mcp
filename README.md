@@ -313,6 +313,18 @@ Test all functionality with the demo script:
 python demo.py
 ```
 
+#### MCP Integration Demo
+Test the MCP integration specifically:
+
+```bash
+python test_mcp_integration_demo.py
+```
+
+This script demonstrates:
+- Different comment formats for Jira creation
+- Test scenarios for PR comment processing
+- Expected behavior for duplicate detection
+
 This will demonstrate:
 - Syncing Jira issues from your configured project
 - Searching for similar issues with fuzzy matching
