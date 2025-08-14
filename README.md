@@ -306,6 +306,11 @@ The server automatically processes these GitHub events:
 
 ### Testing and Demo
 
+#### New Test Scripts
+The project now includes additional test scripts for comprehensive testing:
+- `test_duplicate_detection.py` - Tests duplicate issue detection functionality
+- `test_fuzzy_matching.py` - Tests fuzzy matching algorithms for similarity detection
+
 #### Run Demo Script
 Test all functionality with the demo script:
 
