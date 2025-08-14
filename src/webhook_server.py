@@ -119,6 +119,12 @@ class WebhookServer:
         if "pull_request" not in issue:
             return
 
+        # Ignore comments from the bot itself to prevent loops
+        comment_author = comment.get("user", {}).get("login", "").lower()
+        if comment_author == self.config.github.owner.lower():
+            logger.info(f"Ignoring comment from bot user: {comment_author}")
+            return
+
         pr_number = issue["number"]
         comment_body = comment["body"]
 
@@ -183,14 +189,19 @@ class WebhookServer:
                 comment, pr.title, pr.body, pr.number
             )
 
-            # Ensure issues are synced (force sync more frequently for better duplicate detection)
-            if self.jira_client.needs_sync() or len(self.jira_client.get_all_issues()) == 0:
-                logger.info("Syncing Jira issues...")
-                await self.jira_client.sync_issues()
-
-            # Search for similar existing issues
+            # Search for similar existing issues in local cache FIRST
             search_text = f"{jira_details['summary']} {jira_details['description']}"
             similar_issues = self.jira_client.find_similar_issues(search_text, threshold)
+            
+            logger.info(f"Duplicate detection: searching for '{jira_details['summary'][:50]}...' (threshold: {threshold})")
+            logger.info(f"Found {len(similar_issues)} similar issues in local cache")
+            
+            # If no matches in cache and cache is stale, sync and try again
+            if not similar_issues and (self.jira_client.needs_sync() or len(self.jira_client.get_all_issues()) == 0):
+                logger.info("No local matches found, syncing Jira issues for broader search...")
+                await self.jira_client.sync_issues()
+                similar_issues = self.jira_client.find_similar_issues(search_text, threshold)
+                logger.info(f"After sync: found {len(similar_issues)} similar issues")
 
             if similar_issues:
                 best_match = similar_issues[0]

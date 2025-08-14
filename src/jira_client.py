@@ -172,7 +172,7 @@ class JiraClient:
             # Use the better of the two scores
             combined_score = max(primary_score, fallback_score)
             
-            logger.debug(f"Similarity check for {issue.key}: primary={primary_score:.3f}, fallback={fallback_score:.3f}, final={combined_score:.3f}")
+            logger.info(f"Similarity check for {issue.key}: primary={primary_score:.3f}, fallback={fallback_score:.3f}, final={combined_score:.3f}")
             
             if combined_score >= threshold:
                 matched_fields = []
