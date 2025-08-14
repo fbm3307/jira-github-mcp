@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import json
 import logging
+import time
 from typing import Any, Dict, Optional
 
 from fastapi import FastAPI, Request, HTTPException, BackgroundTasks
@@ -15,6 +16,7 @@ from .config import get_config
 from .jira_client import JiraClient
 from .github_client import GitHubClient
 from .types import Config, CreateJiraIssueRequest, ProcessingResult
+from .monitoring import monitoring
 
 logger = logging.getLogger(__name__)
 
@@ -35,8 +37,22 @@ class WebhookServer:
 
         @self.app.get("/health")
         async def health_check():
-            """Health check endpoint."""
-            return {"status": "ok", "timestamp": "2024-01-01T00:00:00Z"}
+            """Health check endpoint with enhanced status info."""
+            return {
+                "status": "ok", 
+                "timestamp": "2024-01-01T00:00:00Z",
+                "version": "1.1.0",
+                "features": {
+                    "duplicate_detection": "enhanced",
+                    "webhook_loop_prevention": "enabled",
+                    "similarity_threshold": 0.35
+                }
+            }
+
+        @self.app.get("/stats")
+        async def get_statistics():
+            """Get webhook processing statistics."""
+            return monitoring.get_stats()
 
         @self.app.post("/webhook")
         async def github_webhook(request: Request, background_tasks: BackgroundTasks):
@@ -55,6 +71,7 @@ class WebhookServer:
                 payload = json.loads(body.decode("utf-8"))
                 
                 logger.info(f"Received GitHub webhook: {event_type}")
+                monitoring.record_webhook_received()
 
                 # Process event in background
                 background_tasks.add_task(
@@ -152,6 +169,7 @@ class WebhookServer:
         self, pr_number: int, comment: str, threshold: float = 0.35
     ) -> ProcessingResult:
         """Process PR comment for potential Jira creation."""
+        start_time = time.time()
         try:
             # Check if comment is requesting Jira creation
             if not self.github_client.is_create_jira_comment(comment):
@@ -221,6 +239,7 @@ class WebhookServer:
                     f"Please check if this existing issue covers your request before creating a new one."
                 )
 
+                monitoring.record_duplicate_detection()
                 return ProcessingResult(
                     action="found_similar",
                     issue=best_match.issue,
@@ -249,20 +268,28 @@ class WebhookServer:
             )
 
             logger.info(f"Created Jira issue: {new_issue.key}")
-
+            
+            processing_time = time.time() - start_time
+            monitoring.record_jira_creation(processing_time)
             return ProcessingResult(action="created", issue=new_issue)
 
         except Exception as error:
             logger.error(f"Error processing PR comment for Jira: {error}")
+            monitoring.record_error()
             
-            # Add error comment to PR
+            # Add enhanced error comment to PR with troubleshooting info
             try:
-                await self.github_client.add_comment(
-                    pr_number,
+                error_message = (
                     f"❌ **Error creating Jira issue:**\n\n"
-                    f"{str(error)}\n\n"
-                    f"Please check the server logs or try again later."
+                    f"**Error**: {str(error)}\n\n"
+                    f"**Troubleshooting:**\n"
+                    f"- Check if your Jira project key is correct\n"
+                    f"- Verify Jira API credentials are valid\n"
+                    f"- Ensure issue type exists in your project\n"
+                    f"- Check server logs for detailed error information\n\n"
+                    f"**Need help?** Check the [documentation](https://github.com/fbm3307/jira-github-mcp/blob/main/README.md) or try again later."
                 )
+                await self.github_client.add_comment(pr_number, error_message)
             except Exception as comment_error:
                 logger.error(f"Failed to add error comment: {comment_error}")
 
